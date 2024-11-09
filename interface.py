@@ -84,7 +84,7 @@ class SecProject:
             # Baixando o arquivo e atualizando o progresso
             urllib.request.urlretrieve(nmap_installer_url, nmap_installer_path, reporthook=update_progress)
 
-            # Após o download, iniciar a instalação
+            # iniciar a instalação
             progress_label.config(text="Instalando o Nmap...")
             subprocess.run([nmap_installer_path, '/S'], check=True)  # Instalação silenciosa
             progress_label.config(text="Instalação concluída!")
@@ -94,7 +94,7 @@ class SecProject:
             progress_label.config(text=f"Erro: {e}")
             progress_bar['value'] = 0
 
-        # Após a instalação ou erro, fecha a janela de progresso após 3 segundos
+        # fecha a janela de progresso após 3 segundos
         progress_window.after(3000, progress_window.destroy)
 
     def cria_widgets(self):
@@ -103,16 +103,9 @@ class SecProject:
 
         menu_arquivos = tk.Menu(menu_bar, tearoff=0)
 
-        menu_arquivos.add_command(label="Abrir", command=janela.destroy)
-        menu_arquivos.add_separator()
-
-        menu_arquivos.add_command(label="Salvar como", command=janela.destroy)
-        menu_arquivos.add_separator()
-
         menu_arquivos.add_command(label="Sair", command=janela.destroy)
-        menu_arquivos.add_separator()
 
-        menu_bar.add_cascade(label="Arquivo", menu=menu_arquivos)
+        menu_bar.add_cascade(label="Menu", menu=menu_arquivos)
         
         #------------------------------------------------------------------------------------------------
         # Cria o menu "NMap"
