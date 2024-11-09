@@ -1,6 +1,7 @@
 import subprocess
 import tkinter as tk
 import urllib.request
+import webbrowser
 from tkinter import *
 from tkinter import filedialog, messagebox, simpledialog
 from tkinter.ttk import Progressbar
@@ -14,7 +15,7 @@ class SecProject:
     def __init__(self, janela_principal):
         self.janela_principal = janela_principal  
 
-        self.resultado_label = Label(self.janela_principal, text=" ", font="Arial 16", bg="#F5F5F5")
+        self.resultado_label = Label(self.janela_principal, text="SecSCAN", font="Arial 16", bg="#F5F5F5")
         self.resultado_label.pack(side=TOP, padx=10, pady=10)
 
         # Inicializar as variáveis
@@ -53,6 +54,13 @@ class SecProject:
 
         botao_executar = tk.Button(terminal_window, text="Executar", command=executar_comando)
         botao_executar.pack()
+        
+    
+    
+    def help_nmap(self):
+        url= "https://nmap.org/man/pt_BR/"
+        webbrowser.open(url)
+              
 
     def install_nmap_windows(self):
         """Baixa e instala o Nmap no Windows com barra de progresso."""
@@ -112,7 +120,10 @@ class SecProject:
         menu_netcat = tk.Menu(menu_bar, tearoff=0)
 
         menu_netcat.add_command(label="Executar Nmap", command=self.executar_comandos_nmap)
+        menu_netcat.add_separator()
         menu_netcat.add_command(label="Instalar no Windows", command=self.install_nmap_windows)  # Sem parênteses
+        menu_netcat.add_separator()
+        menu_netcat.add_command(label="Documentação", command=self.help_nmap)
 
         menu_bar.add_cascade(label="NMap", menu=menu_netcat)
         
