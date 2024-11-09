@@ -31,5 +31,5 @@ Siga as etapas abaixo para configurar o projeto em sua máquina.
 Clone este repositório para sua máquina local:
 
 ```bash
-git clone https://github.com/seuusuario/seu-repositorio.git
-cd seu-repositorio
+[git clone https://github.com/VictorRobert0/interface-SecSCAN.git]
+cd interface-SecSCAN
