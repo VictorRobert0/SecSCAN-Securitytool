@@ -7,24 +7,21 @@ from tkinter import filedialog, messagebox, simpledialog
 from tkinter.ttk import Progressbar
 import os
 import requests
+#from PIL import Image, ImageTk
 
+# Janela Principal
 janela = Tk()
 janela.title("SecSCAN")
-#janela.attributes("-fullscrean", False)
-janela.geometry("700x300")
+janela.geometry("600x80")
+janela.config(bg="black")  # Cor de fundo escura para estilo hacker
 
 
 class SecProject:
     def __init__(self, janela_principal):
         self.janela_principal = janela_principal  
 
-        self.resultado_label = Label(self.janela_principal, text="SecSCAN", font="Arial 16", bg="#F5F5F5")
+        self.resultado_label = Label(self.janela_principal, text="SecSCAN", font="Courier 16", fg="lime", bg="black")
         self.resultado_label.pack(side=TOP, padx=10, pady=10)
-
-        # Inicializar as variáveis
-        self.tree = None
-        self.table = None 
-        self.filename = ""
 
         self.cria_widgets()
 
@@ -33,10 +30,10 @@ class SecProject:
         def executar_comando():
             parametros = terminal_output.get("1.0", "end-1c")
             
-            if parametros :
+            if parametros:
                 comando = f"sudo nmap {parametros}"
             else:
-                terminal_output.insert(tk.END, "Por favor insira um comando ou IP valido. \n", 'red')
+                terminal_output.insert(tk.END, "Por favor insira um comando ou IP válido.\n", 'red')
                 return 
             try:
                 resultado = subprocess.run(comando, shell=True, capture_output=True, text=True)
@@ -55,17 +52,16 @@ class SecProject:
         terminal_output.tag_config('red', foreground='red')
         terminal_output.pack(fill="both", expand=True)
 
-        botao_executar = tk.Button(terminal_window, text="Executar", command=executar_comando)
+        botao_executar = tk.Button(terminal_window, text="Executar", command=executar_comando, bg="black", fg="lime")
         botao_executar.pack()
     
-    # Função para abrir a documentação do Nmap
     def help_nmap(self):
-        url= "https://nmap.org/man/pt_BR/"
+        """Abre a documentação do Nmap no navegador."""
+        url = "https://nmap.org/man/pt_BR/"
         webbrowser.open(url)
 
     def install_nmap_windows(self):
         """Baixa e instala o Nmap no Windows com barra de progresso."""
-        # Função para atualizar a barra de progresso durante o download
         def update_progress(blocknum, blocksize, totalsize):
             downloaded = blocknum * blocksize
             if totalsize > 0:
@@ -93,10 +89,8 @@ class SecProject:
             # Baixando o arquivo e atualizando o progresso
             urllib.request.urlretrieve(nmap_installer_url, nmap_installer_path, reporthook=update_progress)
 
-            # Atualizando o progresso para "Instalando o Nmap"
-            progress_label.config(text="Instalando o Nmap...")
-            
             # Inicia a instalação silenciosa
+            progress_label.config(text="Instalando o Nmap...")
             subprocess.run([nmap_installer_path, '/S'], check=True)  # Instalação silenciosa
             progress_label.config(text="Instalação concluída!")
             progress_bar['value'] = 100
@@ -107,7 +101,6 @@ class SecProject:
 
         # Fecha a janela de progresso após 3 segundos
         progress_window.after(3000, progress_window.destroy)
-
 
     def download_and_install_metasploit(self):
         """Baixa e instala o Metasploit no Windows com barra de progresso."""
@@ -160,36 +153,30 @@ class SecProject:
         progress_window.after(3000, progress_window.destroy)
 
     def cria_widgets(self):
-        # Cria o menu "Arquivo"
+        # Menu superior
         menu_bar = tk.Menu(self.janela_principal)
 
+        # Menu "Arquivo"
         menu_arquivos = tk.Menu(menu_bar, tearoff=0)
-
         menu_arquivos.add_command(label="Sair", command=janela.destroy)
-
         menu_bar.add_cascade(label="Menu", menu=menu_arquivos)
         
-        #------------------------------------------------------------------------------------------------
-        # Cria o menu "NMap"
-        menu_netcat = tk.Menu(menu_bar, tearoff=0)
+        # Menu "NMap"
+        menu_nmap = tk.Menu(menu_bar, tearoff=0)
+        menu_nmap.add_command(label="Executar Nmap", command=self.executar_comandos_nmap)
+        menu_nmap.add_separator()
+        menu_nmap.add_command(label="Instalar no Windows", command=self.install_nmap_windows)
+        menu_nmap.add_separator()
+        menu_nmap.add_command(label="Documentação", command=self.help_nmap)
+        menu_bar.add_cascade(label="NMap", menu=menu_nmap)
 
-        menu_netcat.add_command(label="Executar Nmap", command=self.executar_comandos_nmap)
-        menu_netcat.add_separator()
-        menu_netcat.add_command(label="Instalar no Windows", command=self.install_nmap_windows)  # Sem parênteses
-        menu_netcat.add_separator()
-        menu_netcat.add_command(label="Documentação", command=self.help_nmap)
-
-        menu_bar.add_cascade(label="NMap", menu=menu_netcat)
-        
-        #------------------------------------------------------------------------------------------------
-        # Cria o menu "MetaSploit"
+        # Menu "MetaSploit"
         menu_metasploit = tk.Menu(menu_bar, tearoff=0)
-        
         menu_metasploit.add_command(label="Executar MetaSploit", command="")  # Defina uma função para isso mais tarde
         menu_metasploit.add_separator()
-        menu_metasploit.add_command(label="Instalar no Windows", command=self.download_and_install_metasploit)  # A função que você deseja chamar
-        
-        menu_bar.add_cascade(label="MetaSploit",menu=menu_metasploit)
+        menu_metasploit.add_command(label="Instalar no Windows", command=self.download_and_install_metasploit)
+        menu_bar.add_cascade(label="MetaSploit", menu=menu_metasploit)
+
         # Define a barra de menu como a barra de menu da janela principal
         self.janela_principal.config(menu=menu_bar)
 
