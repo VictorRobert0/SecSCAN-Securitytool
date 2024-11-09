@@ -1,14 +1,13 @@
 import subprocess
 import tkinter as tk
-import pandas as pd
 import numpy as np
 from tkinter import *
 from tkinter import filedialog, messagebox, simpledialog
-from pandastable import Table
+
 
 
 janela = Tk()
-janela.title("Secmaps")
+janela.title("SecSCAN")
 janela.attributes("-fullscreen", False)
 
 
@@ -20,8 +19,6 @@ class SecProject:
         self.resultado_label = Label(self.janela_principal, text=" ", font="Arial 16", bg="#F5F5F5")
         self.resultado_label.pack(side=TOP, padx=10, pady=10)
 
-        #Cria um dataframe vazio, uma tabela no excel
-        self.df = pd.DataFrame()
 
         #Inicializar as variaveis
         self.tree = None
@@ -35,13 +32,23 @@ class SecProject:
     def executar_comandos_nmap(self):
         """Abre um novo terminal para executar comandos Nmap."""
         def executar_comando():
-            comando = terminal_output.get("1.0", "end-1c")
+            parametros = terminal_output.get("1.0", "end-1c")
+            
+            if parametros :
+                comando = f"sudo nmap {parametros}"
+            else:
+                terminal_output.insert(tk.END, "Por favor insira um comando ou IP valido. \n", 'red')
+                return 
             try:
                 resultado = subprocess.run(comando, shell=True, capture_output=True, text=True)
                 terminal_output.insert(tk.END, resultado.stdout)
-                terminal_output.insert(tk.END, resultado.stderr, 'red')  # Exibe erros em vermelho
+                
+                
+                if resultado.stderr:
+                    terminal_output.insert(tk.END, resultado.stderr, 'red')  # Exibe erros em vermelh
+                
             except subprocess.CalledProcessError as e:
-                terminal_output.insert(tk.END, f"Erro: {e}", 'red')
+                terminal_output.insert(tk.END, f"Erro ao executar o comando: {e}", 'red')
 
         terminal_window = tk.Toplevel(self.janela_principal)
         terminal_window.title("Terminal Nmap")
