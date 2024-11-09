@@ -8,7 +8,8 @@ from tkinter.ttk import Progressbar
 
 janela = Tk()
 janela.title("SecSCAN")
-janela.attributes("-fullscreen", False)
+#janela.attributes("-fullscrean", False)
+janela.geometry("700x300")
 
 
 class SecProject:
@@ -127,8 +128,20 @@ class SecProject:
 
         menu_bar.add_cascade(label="NMap", menu=menu_netcat)
         
+        
+        #------------------------------------------------------------------------------------------------
+        # Cria o menu "MetaSploit"
+        menu_metasploit = tk.Menu(menu_bar, tearoff=0)
+        
+        menu_metasploit.add_command(label="Executar MetaSploit", command="")
+        menu_metasploit.add_separator()
+        menu_metasploit.add_command(label="Instalar no Windows", command="")
+        
+        menu_bar.add_cascade(label="MetaSploit",menu=menu_metasploit)
         # Define a barra de menu como a barra de menu da janela principal
         self.janela_principal.config(menu=menu_bar)
+
+
 
 
 # Criação da janela principal e da instância da classe SecProject
