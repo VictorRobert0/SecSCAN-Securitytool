@@ -10,7 +10,12 @@ SecSCAN é uma ferramenta de segurança simples desenvolvida em Python que facil
 - Executar MetaSploit Windows: Execute comandos Metasploit diretamente pela interface gráfica.
 - **Instalar Metasploit no Windows**: Em breve
 
-###  Para testar diretamente e efetuar o download vá para "Baixar o executável"
+### Baixar o Executável
+Você pode baixar a versão compilada do SecSCAN diretamente da página de Releases do GitHub.
+
+-  Windows:
+[SecSCAN Windows v1.0.0](https://github.com/VictorRobert0/SecSCAN-Securitytool/releases/tag/Secscan-v1.0)
+
 
 ## Pré-requisitos (Desenvolvedores) 
 
@@ -48,11 +53,7 @@ Execute o script principal para iniciar a interface gráfica:
 
 SecSCAN.py
 ``` 
-### Baixar o Executável
-Você pode baixar a versão compilada do SecSCAN diretamente da página de Releases do GitHub.
 
--  Windows:
-[SecSCAN Windows v1.0.0](https://github.com/VictorRobert0/SecSCAN-Securitytool/releases/tag/Secscan-v1.0)
 
 
 ### Contribuindo
