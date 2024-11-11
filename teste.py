@@ -1,159 +1,169 @@
 import requests
 import urllib.request
-import webbrowser
 import threading
 import tkinter as tk
 from tkinter import scrolledtext, messagebox
 from tkinter import ttk
 import subprocess
-from PIL import Image, ImageTk  # Importa as bibliotecas necessárias
+import ctypes
+import os
+from PIL import Image, ImageTk
 
 class SecProject:
     def __init__(self, janela_principal):
         self.janela_principal = janela_principal
-        self.processos = []  # Lista para armazenar processos em execução
+        self.processos = []
 
-        # Carrega e configura a imagem de fundo
-        self.imagem_fundo_original = Image.open("/home/dzklab/interface-SecSCAN/img/secscan.jpg")
+        # Configuração de imagem de fundo
+        self.imagem_fundo_original = Image.open("./interface-SecSCAN/img/secscan.jpg")
         self.imagem_fundo = ImageTk.PhotoImage(self.imagem_fundo_original)
         self.fundo_label = tk.Label(self.janela_principal, image=self.imagem_fundo)
         self.fundo_label.place(relwidth=1, relheight=1, x=0, y=0)
 
-        # Configuração do label de título
+        # Label de título
         self.resultado_label = tk.Label(self.janela_principal, text="SecSCAN", font="Courier 16", fg="lime", bg="black")
         self.resultado_label.pack(side=tk.TOP, padx=10, pady=10)
 
+        # Criação de menu
+        self.menu_bar = tk.Menu(self.janela_principal)
+        self.criar_menu()
+        self.janela_principal.config(menu=self.menu_bar)
+
         self.cria_widgets()
+        self.janela_principal.geometry("700x500")
+        self.janela_principal.resizable(False, False)
 
-        # Redimensiona a imagem ao redimensionar a janela
-        self.janela_principal.bind("<Configure>", self.redimensionar_imagem)
+        # Variável para controlar o estado de execução do scan
+        self.scan_thread = None
+        self.terminar_scan = False
 
-    def redimensionar_imagem(self, event):
-        """Redimensiona a imagem de fundo de acordo com o tamanho da janela."""
-        nova_imagem = self.imagem_fundo_original.resize((event.width, event.height), Image.ANTIALIAS)
-        self.imagem_fundo = ImageTk.PhotoImage(nova_imagem)
-        self.fundo_label.configure(image=self.imagem_fundo)
+    def verificar_instalacao(self, terminal_output):
+        nmap_path = r"C:\Program Files (x86)\Nmap\nmap.exe"
+        if not os.path.isfile(nmap_path):
+            terminal_output.insert(tk.END, "Nmap não encontrado. Por favor, instale o Nmap primeiro.\n", 'red')
+            terminal_output.yview(tk.END)
+            return False
+        return True
+
+    def adicionar_nmap_ao_path(self):
+        nmap_install_path = r"C:\Program Files (x86)\Nmap"
+        if nmap_install_path not in os.environ.get('PATH', ''):
+            os.environ['PATH'] += os.pathsep + nmap_install_path
+            subprocess.run(f'setx PATH "%PATH%;{nmap_install_path}"', shell=True)
+            print("Nmap adicionado ao PATH com sucesso.")
 
     def executar_comandos_nmap(self):
-        """Executa o Nmap em uma thread separada e atualiza a interface com a saída."""
-        
-        def executar_comando():
-            # Obtém o IP e os parâmetros do usuário
-            ip_alvo = ip_entry.get().strip()
-            parametros = parametros_input.get("1.0", "end-1c").strip()
-
-            if not ip_alvo:
-                terminal_output.insert(tk.END, "Por favor, insira um IP válido.\n", 'red')
-                return
-
-            comando = f"nmap {parametros} {ip_alvo}"
-
-            # Executa o comando em uma nova thread
-            def run_nmap():
-                try:
-                    processo = subprocess.Popen(
-                        comando, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-                    )
-                    self.processos.append(processo)
-
-                    # Exibe a saída do processo no campo de output
-                    for linha in processo.stdout:
-                        terminal_output.insert(tk.END, linha)
-                        terminal_output.yview(tk.END)
-
-                    erro = processo.stderr.read()
-                    if erro:
-                        terminal_output.insert(tk.END, erro, 'red')
-                        terminal_output.yview(tk.END)
-
-                except Exception as e:
-                    terminal_output.insert(tk.END, f"Erro ao executar o comando: {e}\n", 'red')
-
-                finally:
-                    # Remove o indicador de carregamento
-                    loading_label.pack_forget()
-                    self.processos.remove(processo)
-
-            # Exibe indicador de carregamento
-            loading_label.pack(side=tk.BOTTOM, pady=5)
-            
-            # Inicia a thread para execução do comando
-            threading.Thread(target=run_nmap).start()
-
-        def cancelar_comando():
-            """Cancela o último comando em execução."""
-            if self.processos:
-                processo = self.processos[-1]
-                processo.terminate()  # Interrompe o subprocesso em execução
-                terminal_output.insert(tk.END, "\nComando cancelado.\n", 'red')
-                self.processos.pop()  # Remove o processo da lista
-                parametros_input.focus()  # Foca no campo de entrada para novos comandos
-
-        # Configuração da interface do terminal
         terminal_window = tk.Toplevel(self.janela_principal)
         terminal_window.title("Terminal Nmap")
 
-        # Campo de entrada para IP alvo
         ip_label = tk.Label(terminal_window, text="IP Alvo:")
         ip_label.pack(anchor="w", padx=10, pady=2)
         ip_entry = tk.Entry(terminal_window, width=30)
         ip_entry.pack(fill="x", padx=10)
 
-        # Campo de entrada para parâmetros de comando
-        parametros_label = tk.Label(terminal_window, text="Parâmetros de scan:")
+        parametros_label = tk.Label(terminal_window, text="Parâmetros de scan adicionais:")
         parametros_label.pack(anchor="w", padx=10, pady=2)
-        parametros_input = tk.Text(terminal_window, height=2, width=80)
-        parametros_input.pack(fill="x", padx=10, pady=5)
+        parametros_entry = tk.Entry(terminal_window, width=30)
+        parametros_entry.pack(fill="x", padx=10)
 
-        # Área de saída do terminal
-        terminal_output = scrolledtext.ScrolledText(terminal_window, height=20, width=80)
-        terminal_output.tag_config('red', foreground='red')
-        terminal_output.pack(fill="both", expand=True)
-
-        # Combobox de comandos prontos e sua seleção
-        comandos_comuns = [
-            "scan rápido: -T4 -F",
-            "scan completo: -sS -sV -O",
-            "scan de portas específicas: -p 80,443",
-            "scan de rede: 192.168.1.0/24",
-            "scan de vulnerabilidades: --script vuln"
+        # 50 comandos mais utilizados no Nmap
+        comandos_nmap = [
+            ("nmap -v", "Exibe a versão do Nmap e informações detalhadas."),
+            ("nmap -A", "Detecta sistema operacional, versões de serviços e executa scripts."),
+            ("nmap -sS", "Realiza um scan SYN (Stealth Scan), evitando deteções."),
+            ("nmap -O", "Identifica o sistema operacional alvo."),
+            ("nmap -sP", "Realiza um ping scan, identificando hosts ativos."),
+            ("nmap -T4", "Aumenta a velocidade do scan."),
+            ("nmap -sV", "Detecta as versões dos serviços em execução."),
+            ("nmap -p 80", "Escaneia a porta 80 (HTTP) do alvo."),
+            ("nmap --script vuln", "Executa scripts de vulnerabilidade."),
+            ("nmap -O --osscan-limit", "Limita a detecção de sistema operacional."),
+            ("nmap -Pn", "Desativa o ping, assumindo que o host está ativo."),
+            ("nmap -p- 192.168.1.1", "Escaneia todas as portas de um host."),
+            ("nmap --top-ports 10", "Escaneia as 10 portas mais comuns."),
+            ("nmap -sU", "Escaneia portas UDP."),
+            ("nmap -iL targets.txt", "Escaneia múltiplos alvos de um arquivo."),
+            ("nmap -sR", "Realiza um scan de portas aleatórias."),
+            ("nmap -sA", "Detecta firewalls e filtra pacotes."),
+            ("nmap -6", "Realiza um scan em redes IPv6."),
+            ("nmap --script discovery", "Executa scripts de descoberta."),
+            ("nmap -p 1-65535", "Escaneia todas as portas (1 a 65535).")
         ]
 
-        def seleciona_comando(event):
-            comando_selecionado = comando_combobox.get()
-            parametros_input.delete("1.0", tk.END)
-            parametros_input.insert(tk.END, comando_selecionado.split(": ")[1])
+        comandos_tree = ttk.Treeview(terminal_window, columns=("Comando", "Descrição"), show="headings", height=10)
+        comandos_tree.heading("Comando", text="Comando")
+        comandos_tree.heading("Descrição", text="Descrição")
+        comandos_tree.pack(padx=10, pady=10, fill="x")
 
-        comando_combobox = ttk.Combobox(terminal_window, values=comandos_comuns)
-        comando_combobox.bind("<<ComboboxSelected>>", seleciona_comando)
-        comando_combobox.pack(padx=10, pady=5)
+        for comando, descricao in comandos_nmap:
+            comandos_tree.insert("", "end", values=(comando, descricao))
 
-        # Botões para executar e cancelar
-        botao_executar = tk.Button(terminal_window, text="Executar", command=executar_comando, bg="black", fg="lime")
-        botao_executar.pack(side=tk.LEFT, padx=10)
+        terminal_output = scrolledtext.ScrolledText(terminal_window, height=15, width=80)
+        terminal_output.pack(padx=10, pady=10)
 
-        botao_cancelar = tk.Button(terminal_window, text="Cancelar", command=cancelar_comando, bg="black", fg="red")
-        botao_cancelar.pack(side=tk.RIGHT, padx=10)
+        def executar_comando():
+            ip = ip_entry.get()
+            parametros = parametros_entry.get()
+            item_selecionado = comandos_tree.selection()
 
-        # Indicador de carregamento
-        loading_label = tk.Label(terminal_window, text="Executando...", fg="orange", bg="black")
+            if not item_selecionado:
+                messagebox.showwarning("Atenção", "Selecione um comando.")
+                return
 
-        ip_entry.focus()  # Foca no campo de entrada de IP inicialmente
+            comando_selecionado = comandos_tree.item(item_selecionado[0], "values")[0]
+            comando_completo = f'{comando_selecionado} {ip} {parametros}'
+
+            if self.verificar_instalacao(terminal_output):
+                terminal_output.insert(tk.END, f"\nExecutando: {comando_completo}\n", 'blue')
+                terminal_output.yview(tk.END)
+
+                def run_nmap():
+                    nmap_path = r"C:/Program Files (x86)/Nmap/nmap.exe"
+                    process = subprocess.Popen([nmap_path, *comando_completo.split()], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                    for line in iter(process.stdout.readline, b''):
+                        terminal_output.insert(tk.END, line.decode('utf-8'))
+                        terminal_output.yview(tk.END)
+
+                    for line in iter(process.stderr.readline, b''):
+                        terminal_output.insert(tk.END, line.decode('utf-8'))
+                        terminal_output.yview(tk.END)
+
+                    process.stdout.close()
+                    process.stderr.close()
+                    process.wait()
+
+                self.terminar_scan = False
+                self.scan_thread = threading.Thread(target=run_nmap)
+                self.scan_thread.start()
+
+        def cancelar_scan():
+            if self.scan_thread:
+                self.terminar_scan = True
+                self.scan_thread.join()  # Espera o thread do Nmap finalizar
+                terminal_output.insert(tk.END, "\nScan cancelado.\n", 'red')
+                terminal_output.yview(tk.END)
+
+        def limpar_terminal():
+            terminal_output.delete(1.0, tk.END)
+
+        # Organize buttons side by side using a frame
+        buttons_frame = tk.Frame(terminal_window)
+        buttons_frame.pack(pady=10)
+
+        executar_button = tk.Button(buttons_frame, text="Executar Comando", command=executar_comando, bg="black", fg="lime")
+        executar_button.pack(side=tk.LEFT, padx=5)
+
+        cancelar_button = tk.Button(buttons_frame, text="Cancelar Scan", command=cancelar_scan, bg="black", fg="lime")
+        cancelar_button.pack(side=tk.LEFT, padx=5)
+
+        limpar_button = tk.Button(buttons_frame, text="Limpar", command=limpar_terminal, bg="black", fg="lime")
+        limpar_button.pack(side=tk.LEFT, padx=5)
 
     def install_nmap_windows(self):
-        """Baixa e instala o Nmap no Windows com barra de progresso."""
-        def update_progress(blocknum, blocksize, totalsize):
-            downloaded = blocknum * blocksize
-            if totalsize > 0:
-                percent = int((downloaded / totalsize) * 100)
-                progress_bar['value'] = percent
-                progress_label.config(text=f"Progresso: {percent}%")
-                janela.update_idletasks()  # Atualiza a interface gráfica
-
-        # Criando uma janela de progresso
+        """Função de instalação do Nmap no Windows"""
         progress_window = tk.Toplevel(self.janela_principal)
-        progress_window.title("Instalando Nmap")
-        progress_window.geometry("400x150")
+        progress_window.title("Instalação do Nmap")
 
         progress_label = tk.Label(progress_window, text="Baixando o instalador do Nmap...", font="Arial 12")
         progress_label.pack(pady=10)
@@ -161,115 +171,50 @@ class SecProject:
         progress_bar = ttk.Progressbar(progress_window, length=300, orient=tk.HORIZONTAL, mode='determinate')
         progress_bar.pack(pady=20)
 
-        # Baixa o instalador do Nmap
         nmap_installer_url = "https://nmap.org/dist/nmap-7.94-setup.exe"
         nmap_installer_path = "nmap-setup.exe"
-        
+
         try:
-            # Baixando o arquivo e atualizando o progresso
+            def update_progress(block_num, block_size, total_size):
+                progress = block_num * block_size / total_size * 100
+                progress_bar['value'] = progress
+                progress_window.update_idletasks()
+
             urllib.request.urlretrieve(nmap_installer_url, nmap_installer_path, reporthook=update_progress)
 
-            # Inicia a instalação silenciosa
             progress_label.config(text="Instalando o Nmap...")
-            subprocess.run([nmap_installer_path, '/S'], check=True)  # Instalação silenciosa
+            self.run_as_admin(nmap_installer_path, '/S')
             progress_label.config(text="Instalação concluída!")
             progress_bar['value'] = 100
 
+            self.adicionar_nmap_ao_path()
+
         except Exception as e:
-            progress_label.config(text=f"Erro: {e}")
+            progress_label.config(text="Erro ao baixar ou instalar o Nmap.")
+            print(f"Erro: {e}")
             progress_bar['value'] = 0
 
-        # Fecha a janela de progresso após 3 segundos
-        progress_window.after(3000, progress_window.destroy)
+    def run_as_admin(self, executable, *args):
+        """Executa um programa com privilégios de administrador"""
+        ctypes.windll.shell32.ShellExecuteW(None, "runas", executable, ' '.join(args), None, 1)
 
-    def help_nmap(self):
-        """Abre a documentação do Nmap no navegador."""
-        url = "https://nmap.org/man/pt_BR/"
-        webbrowser.open(url)
+    def criar_menu(self):
+        nmap_menu = tk.Menu(self.menu_bar, tearoff=0)
+        nmap_menu.add_command(label="Instalar Nmap", command=self.install_nmap_windows)
+        self.menu_bar.add_cascade(label="Nmap", menu=nmap_menu)
 
-    def executar_metasploit(self):
-        """Executa o Metasploit em uma thread separada e atualiza a interface com a saída."""
-        terminal_output = tk.Toplevel(self.janela_principal)
-        terminal_output.title("Metasploit Terminal")
-        terminal_output.geometry("600x400")
-        
-        terminal_text = scrolledtext.ScrolledText(terminal_output, height=20, width=80)
-        terminal_text.pack(fill="both", expand=True)
-
-        def run_msfconsole():
-            try:
-                processo = subprocess.Popen(
-                    "msfconsole", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-                )
-                self.processos.append(processo)
-                
-                # Leitura da saída do processo
-                for linha in processo.stdout:
-                    terminal_text.insert(tk.END, linha)
-                    terminal_text.yview(tk.END)
-
-                erro = processo.stderr.read()
-                if erro:
-                    terminal_text.insert(tk.END, erro, 'red')
-                    terminal_text.yview(tk.END)
-
-            except Exception as e:
-                terminal_text.insert(tk.END, f"Erro ao executar o Metasploit: {e}\n", 'red')
-
-        # Inicia a execução do Metasploit
-        threading.Thread(target=run_msfconsole).start()
-
-    def instalar_metasploit_windows(self):
-        """Instala o Metasploit Framework no Windows"""
-        url = "https://metasploit.help.rapid7.com/docs/installing-the-metasploit-framework"
-        webbrowser.open(url)
-
-    def help_metasploit(self):
-        """Abre a documentação do Metasploit no navegador"""
-        url = "https://www.metasploit.com/docs"
-        webbrowser.open(url)
+        metasploit_menu = tk.Menu(self.menu_bar, tearoff=0)
+        metasploit_menu.add_command(label="Opção Metasploit", command=lambda: messagebox.showinfo("Metasploit", "Implementando essa função"))
+        self.menu_bar.add_cascade(label="Metasploit", menu=metasploit_menu)
 
     def cria_widgets(self):
-        """Configuração de widgets na janela principal."""
-        
-        # Criando um frame para centralizar os botões
-        central_frame = tk.Frame(self.janela_principal, bg="black")
-        central_frame.pack(pady=50)
+        botao_terminal = tk.Button(self.janela_principal, text="Abrir Terminal Nmap", command=self.executar_comandos_nmap, bg="black", fg="lime")
+        botao_terminal.pack(padx=10, pady=100)
 
-        # Adicionando os botões centralizados
-        botao_nmap = tk.Button(central_frame, text="Terminal Nmap", command=self.executar_comandos_nmap, bg="black", fg="lime")
-        botao_nmap.pack(padx=10, pady=5)
-
-        # Criando o menu suspenso para Nmap
-        nmap_menu = tk.Menu(self.janela_principal, tearoff=0)
-        nmap_menu.add_command(label="Instalar Nmap", command=self.install_nmap_windows)
-        nmap_menu.add_command(label="Help Nmap", command=self.help_nmap)
-
-        # Criando o menu suspenso para Metasploit
-        metasploit_menu = tk.Menu(self.janela_principal, tearoff=0)
-        metasploit_menu.add_command(label="Executar Metasploit", command=self.executar_metasploit)
-        metasploit_menu.add_command(label="Instalar Metasploit", command=self.instalar_metasploit_windows)
-        metasploit_menu.add_command(label="Help Metasploit", command=self.help_metasploit)
-
-        menu_bar = tk.Menu(self.janela_principal)
-        menu_bar.add_cascade(label="Nmap", menu=nmap_menu)
-        menu_bar.add_cascade(label="Metasploit", menu=metasploit_menu)
-
-        # Configuração da barra de menus
-        self.janela_principal.config(menu=menu_bar)
-
-        botao_metasploit = tk.Button(central_frame, text="Terminal Metasploit", command=self.executar_metasploit, bg="black", fg="lime")
-        botao_metasploit.pack(padx=10, pady=5)
-
-        botao_help_metasploit = tk.Button(central_frame, text="Help Metasploit", command=self.help_metasploit, bg="black", fg="orange")
-        botao_help_metasploit.pack(padx=10, pady=5)
+        botao_terminal_metasploit = tk.Button(self.janela_principal, text="Abrir Terminal Metasploit", command=lambda: messagebox.showinfo("Metasploit", "Implementando essa função"), bg="black", fg="lime")
+        botao_terminal_metasploit.pack(padx=10, pady=0.7)
 
 
-# Inicialização da interface Tkinter
-janela = tk.Tk()
-janela.title("SecProject")
-janela.geometry("800x496")
-janela.config(bg="black")
-
-app = SecProject(janela)
-janela.mainloop()
+root = tk.Tk()
+app = SecProject(root)
+root.mainloop()
