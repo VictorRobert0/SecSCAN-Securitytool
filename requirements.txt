@@ -1,6 +1,15 @@
+altgraph==0.17.4
 certifi==2024.8.30
 charset-normalizer==3.4.0
+cx_Freeze==7.2.4
+cx_Logging==3.2.1
 idna==3.10
+lief==0.15.1
+packaging==24.2
+pefile==2023.2.7
 pillow==11.0.0
+pyinstaller==6.11.1
+pyinstaller-hooks-contrib==2024.10
+pywin32-ctypes==0.2.3
 requests==2.32.3
 urllib3==2.2.3
