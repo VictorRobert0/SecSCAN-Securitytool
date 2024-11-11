@@ -68,9 +68,4 @@ Abra um Pull Request!
 ```
 
 
-### Alterações feitas
-- Versão 1.0.0:
-- Seção "Baixar o Executável": Adicionada uma seção com links para baixar a versão compilada do executável diretamente da página de releases no GitHub.
-- Instruções para compilar o executável: Explicação sobre como compilar o executável você mesmo usando PyInstaller.
-- Correção no comando de clonagem do repositório: O comando git clone foi corrigido e ajustado para refletir o repositório correto.
 ### SecSCAN foi desenvolvido por Victor Roberto. Se você tiver alguma dúvida ou sugestão, sinta-se à vontade para abrir uma issue ou enviar uma mensagem.
