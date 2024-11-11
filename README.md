@@ -10,7 +10,9 @@ SecSCAN é uma ferramenta de segurança simples desenvolvida em Python que facil
 - Executar MetaSploit Windows: Execute comandos Metasploit diretamente pela interface gráfica.
 - **Instalar Metasploit no Windows**: Em breve
 
-## Pré-requisitos (Para Desenvolvedores) | Para testar diretamente e efetuar o download vá para "Baixar executavel"
+###  Para testar diretamente e efetuar o download vá para "Baixar o executável"
+
+## Pré-requisitos (Desenvolvedores) 
 
 Antes de começar, você precisará ter o Python instalado em sua máquina, bem como as dependências necessárias. 
 
