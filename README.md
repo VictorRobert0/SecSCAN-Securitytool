@@ -36,15 +36,13 @@ cd SecSCAN-Securitytool
 2. Instalar as Dependências
 Instale as dependências do projeto com o pip:
 
-bash
-Copiar código
+
 pip install -r requirements.txt
 3. Executar a Ferramenta
 Execute o script principal para iniciar a interface gráfica:
 
-bash
-Copiar código
-python main.py
+SecSCAN.py
+
 Baixar o Executável
 Você pode baixar a versão compilada do SecSCAN diretamente da página de Releases do GitHub.
 
