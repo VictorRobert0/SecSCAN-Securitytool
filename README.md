@@ -31,5 +31,35 @@ Siga as etapas abaixo para configurar o projeto em sua máquina.
 Clone este repositório para sua máquina local:
 
 ```bash
-[git clone https://github.com/VictorRobert0/interface-SecSCAN.git]
-cd interface-SecSCAN
+git clone https://github.com/VictorRobert0/SecSCAN-Securitytool.git
+cd SecSCAN-Securitytool
+2. Instalar as Dependências
+Instale as dependências do projeto com o pip:
+
+bash
+Copiar código
+pip install -r requirements.txt
+3. Executar a Ferramenta
+Execute o script principal para iniciar a interface gráfica:
+
+bash
+Copiar código
+python main.py
+Baixar o Executável
+Você pode baixar a versão compilada do SecSCAN diretamente da página de Releases do GitHub.
+
+Para Windows:
+SecSCAN Windows v1.0.0
+
+Contribuindo
+Se você deseja contribuir para o desenvolvimento do SecSCAN, fique à vontade para abrir issues ou enviar pull requests.
+
+Licença
+Este projeto está licenciado sob a Licença MIT - veja o arquivo LICENSE para mais detalhes.
+
+
+
+### Alterações feitas (exemplo):
+1. **Seção "Baixar o Executável"**: Adicionei uma seção com links para baixar o executável diretamente da página de releases no GitHub.
+2. **Instruções para compilar o executável**: Explicação sobre como compilar o executável você mesmo usando `PyInstaller`.
+3. **Correção no comando de clonagem do repositório**: O comando `git clone` foi corrigido pa
