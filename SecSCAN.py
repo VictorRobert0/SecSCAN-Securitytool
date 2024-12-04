@@ -46,7 +46,48 @@ class SecProject:
         # Variável para controlar o estado de execução do scan
         self.scan_thread = None
         self.terminar_scan = False
+        
+    
+    def verificar_instalacao_metasploit(self): #Preciso terminar esse PATH
+        pass
+       # metasploit_path = r"C:\Program Files (x86)\metasploit-framework\" 
+        
+    def install_metasploit_windows(self):
+        """Função de instalação do Nmap no Windows"""
+        progress_window = tk.Toplevel(self.janela_principal)
+        progress_window.title("Instalação do Metasploit Framework")
 
+        progress_label = tk.Label(progress_window, text="Baixando o instalador do Metasploit...", font="Arial 12")
+        progress_label.pack(pady=10)
+
+        progress_bar = ttk.Progressbar(progress_window, length=300, orient=tk.HORIZONTAL, mode='determinate')
+        progress_bar.pack(pady=20)
+
+        metasploit_installer_url = "https://windows.metasploit.com/metasploitframework-latest.msi"
+        metasploit_installer_path = "metasploitframework-latest.msi"
+
+        try:
+            def update_progress(block_num, block_size, total_size):
+                progress = block_num * block_size / total_size * 100
+                progress_bar['value'] = progress
+                progress_window.update_idletasks()
+
+            urllib.request.urlretrieve( metasploit_installer_url,  metasploit_installer_path, reporthook=update_progress)
+
+            progress_label.config(text="Instalando o Nmap...")
+            self.run_as_admin( metasploit_installer_path, '/S')
+            progress_label.config(text="Instalação concluída!")
+            progress_bar['value'] = 100
+
+            self.adicionar_nmap_ao_path()
+
+        except Exception as e:
+            progress_label.config(text="Erro ao baixar ou instalar o Metasploit Framework.")
+            print(f"Erro: {e}")
+            progress_bar['value'] = 0
+#------------------------------------------------------------------------------------------------------------------------------------------------------------  
+                                #COMANDOS NMAP
+#------------------------------------------------------------------------------------------------------------------------------------------------------------
     def verificar_instalacao(self, terminal_output):
         nmap_path = r"C:\Program Files (x86)\Nmap\nmap.exe"
         if not os.path.isfile(nmap_path):
@@ -193,6 +234,8 @@ class SecProject:
 
         def limpar_terminal():
             terminal_output.delete(1.0, tk.END)
+            
+            
 
         # Organize buttons side by side using a frame
         buttons_frame = tk.Frame(terminal_window)
@@ -244,6 +287,9 @@ class SecProject:
     def run_as_admin(self, executable, *args):
         """Executa um programa com privilégios de administrador"""
         ctypes.windll.shell32.ShellExecuteW(None, "runas", executable, ' '.join(args), None, 1)
+        
+#------------------------------------------------------------------------------------------------------------------------------------------------------------  
+#------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     def criar_menu(self):
         nmap_menu = tk.Menu(self.menu_bar, tearoff=0)
@@ -251,7 +297,7 @@ class SecProject:
         self.menu_bar.add_cascade(label="Nmap", menu=nmap_menu)
 
         metasploit_menu = tk.Menu(self.menu_bar, tearoff=0)
-        metasploit_menu.add_command(label="Opção Metasploit", command=lambda: messagebox.showinfo("Metasploit", "Implementando essa função"))
+        metasploit_menu.add_command(label="Instalar MetaSploit", command=self.install_metasploit_windows)
         self.menu_bar.add_cascade(label="Metasploit", menu=metasploit_menu)
 
     def cria_widgets(self):
