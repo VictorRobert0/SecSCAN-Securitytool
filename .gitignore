@@ -1,2 +1,5 @@
 venv/
-build/SecSCAN/
+build/SecSCAN
+SecScan.spec
+interface.spec
+dist
