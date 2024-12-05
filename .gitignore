@@ -1,5 +1,5 @@
 venv/
 build/SecSCAN
-SecScan.spec
-interface.spec
-dist
+SecScan.spec/
+interface.spec/
+dist/
