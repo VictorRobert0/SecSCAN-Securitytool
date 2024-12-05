@@ -8,12 +8,16 @@ import subprocess
 import ctypes
 import sys
 import os
+import webbrowser
 from PIL import Image, ImageTk
 
 class SecProject:
     def __init__(self, janela_principal):
         self.janela_principal = janela_principal
         self.processos = []
+
+        # Inicializa msf_path como None
+        self.msf_path = None
 
         # Configuração de imagem de fundo (verificando o ambiente)
         if getattr(sys, 'frozen', False):  # Se for um executável compilado
@@ -46,16 +50,111 @@ class SecProject:
         # Variável para controlar o estado de execução do scan
         self.scan_thread = None
         self.terminar_scan = False
-        
-    
-    def verificar_instalacao_metasploit(self): #Preciso terminar esse PATH
-        pass
-       # metasploit_path = r"C:\Program Files (x86)\metasploit-framework\" 
-        
-    def install_metasploit_windows(self):
-        """Função de instalação do Nmap no Windows"""
+
+
+
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                           # METASPLOIT SESSION - TERMINAL
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ 
+    def doc_metasploit(self):
+        webbrowser.open("https://docs.metasploit.com/docs/pentesting/metasploit-guide-setting-module-options.html")
+
+
+
+    def buscar_msfconsole(self, raiz="C:\\"):
+        """Busca recursivamente o msfconsole.bat no sistema"""
+        for root, dirs, files in os.walk(raiz):
+            if "msfconsole.bat" in files:
+                return os.path.join(root, "msfconsole.bat")
+        return None
+
+    def verificar_instalacao_metasploit(self):
+        """Verifica se o Metasploit está instalado em algum local do sistema"""
+        # Verifica se o caminho já foi armazenado
+        if self.msf_path and os.path.isfile(self.msf_path):
+            return True
+
+        # Tenta localizar o msfconsole
+        drives = [f"{chr(x)}:\\" for x in range(65, 91) if os.path.exists(f"{chr(x)}:\\")]
+        for drive in drives:
+            self.msf_path = self.buscar_msfconsole(drive)
+            if self.msf_path:
+                return True
+
+        return False
+
+    def executar_terminal_metasploit(self):
+        """Abre um terminal interativo apenas se o Metasploit estiver instalado"""
+        if not self.verificar_instalacao_metasploit():
+            messagebox.showerror("Erro", "Metasploit Framework não está instalado no sistema.")
+            return
+
+        # Cria a janela para o terminal
+        terminal_window = tk.Toplevel(self.janela_principal)
+        terminal_window.title("Terminal Metasploit")
+        terminal_window.geometry("600x400")
+
+        # Caixa de texto para saída
+        terminal_output = tk.Text(terminal_window, wrap="word", state="disabled", bg="black", fg="white")
+        terminal_output.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Entrada para comandos
+        command_frame = tk.Frame(terminal_window)
+        command_frame.pack(fill="x", padx=10, pady=5)
+
+        tk.Label(command_frame, text="Comando:").pack(side="left")
+        command_entry = tk.Entry(command_frame)
+        command_entry.pack(side="left", fill="x", expand=True, padx=5)
+        send_button = tk.Button(command_frame, text="Executar", command=lambda: self.executar_comando_metasploit(command_entry, terminal_output))
+        send_button.pack(side="right")
+
+        # Inicia o msfconsole em um subprocess
+        self.msf_process = subprocess.Popen(
+            [self.msf_path],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1
+        )
+
+        # Atualiza a saída do terminal com os logs do msfconsole
+        threading.Thread(target=self.atualizar_terminal, args=(terminal_output,), daemon=True).start()
+
+    def executar_comando_metasploit(self, command_entry, terminal_output):
+        """Envia um comando para o msfconsole"""
+        command = command_entry.get().strip()
+        if self.msf_process and command:
+            self.msf_process.stdin.write(command + "\n")
+            self.msf_process.stdin.flush()
+            command_entry.delete(0, tk.END)
+
+    def atualizar_terminal(self, terminal_output):
+        """Atualiza o terminal com a saída do msfconsole"""
+        while self.msf_process and self.msf_process.poll() is None:
+            output = self.msf_process.stdout.readline()
+            if output:
+                terminal_output.config(state="normal")
+                terminal_output.insert("end", output)
+                terminal_output.config(state="disabled")
+                terminal_output.see("end")
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    def install_metasploit(self):
+        """Função de instalação do Metasploit no Windows"""
         progress_window = tk.Toplevel(self.janela_principal)
-        progress_window.title("Instalação do Metasploit Framework")
+        progress_window.title("Instalação do Metasploit")
 
         progress_label = tk.Label(progress_window, text="Baixando o instalador do Metasploit...", font="Arial 12")
         progress_label.pack(pady=10)
@@ -67,24 +166,57 @@ class SecProject:
         metasploit_installer_path = "metasploitframework-latest.msi"
 
         try:
+            # Atualiza o progresso do download
             def update_progress(block_num, block_size, total_size):
                 progress = block_num * block_size / total_size * 100
                 progress_bar['value'] = progress
                 progress_window.update_idletasks()
 
-            urllib.request.urlretrieve( metasploit_installer_url,  metasploit_installer_path, reporthook=update_progress)
+            # Baixa o instalador
+            urllib.request.urlretrieve(metasploit_installer_url, metasploit_installer_path, reporthook=update_progress)
 
-            progress_label.config(text="Instalando o Nmap...")
-            self.run_as_admin( metasploit_installer_path, '/S')
+            # Atualiza o label para indicar o próximo passo
+            progress_label.config(text="Instalando o Metasploit...")
+
+            # Executa o instalador .msi como administrador
+            self.run_msi_as_admin(metasploit_installer_path)
+
+            # Confirma a conclusão
             progress_label.config(text="Instalação concluída!")
             progress_bar['value'] = 100
 
-            self.adicionar_nmap_ao_path()
+            # Adiciona o Metasploit ao PATH do sistema
+            self.adicionar_metasploit_ao_path()
 
         except Exception as e:
-            progress_label.config(text="Erro ao baixar ou instalar o Metasploit Framework.")
+            progress_label.config(text="Erro ao baixar ou instalar o Metasploit.")
             print(f"Erro: {e}")
             progress_bar['value'] = 0
+
+    def run_msi_as_admin(self, msi_path):
+        """Executa um arquivo MSI como administrador"""
+        try:
+            # Executa o comando msiexec com privilégios elevados
+            cmd = f'powershell -Command "Start-Process msiexec.exe -ArgumentList \'/i \\"{msi_path}\\" /quiet /norestart\' -Verb RunAs"'
+            subprocess.run(cmd, shell=True, check=True)
+            print(f"Instalador {msi_path} executado com sucesso.")
+        except subprocess.CalledProcessError as e:
+            print(f"Erro ao executar o instalador: {e}")
+        except Exception as e:
+            print(f"Erro inesperado ao executar o instalador: {e}")
+
+    def adicionar_metasploit_ao_path(self):
+        """Adiciona o Metasploit ao PATH do sistema"""
+        metasploit_install_path = r"C:\Program Files (x86)\metasploit-framework"
+        if metasploit_install_path not in os.environ.get('PATH', ''):
+            os.environ['PATH'] += os.pathsep + metasploit_install_path
+            try:
+                subprocess.run(f'setx PATH "%PATH%;{metasploit_install_path}"', shell=True, check=True)
+                print("Metasploit adicionado ao PATH com sucesso. :)")
+            except subprocess.CalledProcessError as e:
+                print(f"Erro ao adicionar Metasploit ao PATH: {e}")
+
+
 #------------------------------------------------------------------------------------------------------------------------------------------------------------  
                                 #COMANDOS NMAP
 #------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -297,8 +429,12 @@ class SecProject:
         self.menu_bar.add_cascade(label="Nmap", menu=nmap_menu)
 
         metasploit_menu = tk.Menu(self.menu_bar, tearoff=0)
-        metasploit_menu.add_command(label="Instalar MetaSploit", command=self.install_metasploit_windows)
+        metasploit_menu.add_command(label="Instalar MetaSploit", command=self.install_metasploit)
+        metasploit_menu.add_command(label="Documentação - Metasploit", command=self.doc_metasploit)
         self.menu_bar.add_cascade(label="Metasploit", menu=metasploit_menu)
+
+
+
 
     def cria_widgets(self):
         # Botão para abrir o terminal do Nmap
@@ -306,7 +442,7 @@ class SecProject:
         botao_terminal.pack(padx=10, pady=(90, 50))  # Ajustado o espaçamento superior e inferior
 
         # Botão para abrir o terminal do Metasploit
-        botao_terminal_metasploit = tk.Button(self.janela_principal, text="Abrir Terminal Metasploit", command=lambda: messagebox.showinfo("Metasploit", "Implementando essa função"), bg="black", fg="lime")
+        botao_terminal_metasploit = tk.Button(self.janela_principal, text="Abrir Terminal Metasploit", command=self.executar_terminal_metasploit, bg="black", fg="lime")
         botao_terminal_metasploit.pack(padx=10, pady=(2, 20))  # Ajustado o espaçamento para o Metasploit
 
 
