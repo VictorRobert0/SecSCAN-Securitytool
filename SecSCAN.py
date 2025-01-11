@@ -44,7 +44,7 @@ class SecProject:
         self.janela_principal.resizable(False, False)
 
         # Adicionando assinatura no canto inferior direito
-        self.assinatura_label = tk.Label(self.janela_principal, text="Desenvolvido por Victor Roberto", font="Arial 10", fg="white", bg="black")
+        self.assinatura_label = tk.Label(self.janela_principal, text="Desenvolvido por Victor RobertoS", font="Arial 10", fg="white", bg="black")
         self.assinatura_label.place(x=511, y=476)
 
         # Variável para controlar o estado de execução do scan
