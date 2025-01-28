@@ -1,0 +1,20 @@
+{
+    "production": {
+        "app_function": "SecSCAN.py",
+        "exclude": [
+            "boto3",
+            "dateutil",
+            "botocore",
+            "s3transfer",
+            "concurrent"
+        ],
+        "profile_name": null,
+        "project_name": "secscan-securit",
+        "runtime": "python3.12",
+        "s3_bucket": "dzklab-dados"
+    },
+    "production_us_east_1": {
+        "aws_region": "us-east-1",
+        "extends": "production"
+    }
+}
