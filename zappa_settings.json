@@ -1,6 +1,6 @@
 {
     "production": {
-        "app_function": "SecSCAN.py",
+        "app_function": "SecSCAN.main",
         "exclude": [
             "boto3",
             "dateutil",
