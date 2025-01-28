@@ -1,11 +1,11 @@
-name: Deploy SecSCAN with Zappa
+name: Update SecSCAN
 
 on:
   push:
     branches: [ main ]
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
@@ -15,11 +15,11 @@ jobs:
           python-version: '3.10'
       - name: Install dependencies
         run: pip install -r requirements.txt
-      - name: Install Zappa
-        run: pip install zappa
-      - name: Deploy to AWS
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        run: |
-          zappa deploy production_us_east_1
+      - name: Build executable
+        run: pyinstaller --onefile SecSCAN.py
+      - name: Copy to local machine
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Update SecSCAN to latest version
+          file: ./dist/SecSCAN
+          destination: ./dist
